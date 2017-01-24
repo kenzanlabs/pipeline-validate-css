@@ -12,8 +12,6 @@ var fs = require('fs');
 var path = require('path');
 var rimraf = require('rimraf');
 var handyman = require('pipeline-handyman');
-var source = require('vinyl-source-stream');
-var buffer = require('vinyl-buffer');
 
 var validateCSSPipeline = require('../src/index');
 
@@ -70,7 +68,7 @@ describe('pipeline-validate-css', function () {
 
       validateCSSPipeline.validateCSS();
 
-      expect(spy).to.have.been.calledWith(sinon.match.func);
+      expect(spy).to.have.been.calledWith(sinon.match.object);
 
       cssLint.formatter.restore();
     });
@@ -88,6 +86,13 @@ describe('pipeline-validate-css', function () {
         that spying would be possible.
       */
       xit('should utilize cssLint with no options', function () {
+        /*
+         The hope here was to spy on the default method of gulp-csslint
+         to ensure that it was part of the stream process. Unfortunately,
+         it seems impossible to spy on the default method using require().
+         However, when moving to ES6 and the import statement there may be a possibility
+         that spying would be possible.
+         */
         var spy = sinon.spy(cssLint);
 
         validateCSSPipeline.validateCSS();
@@ -122,6 +127,9 @@ describe('pipeline-validate-css', function () {
         https://github.com/kenzanlabs/pipeline-validate-css/issues/28
       */
       xit('should utilize cssLint with the provided options object', function () {
+        /*
+         Same issue here with spying on gulp-csslint
+         */
         var spy = sinon.spy(cssLint);
 
         validateCSSPipeline.validateCSS();
@@ -151,40 +159,6 @@ describe('pipeline-validate-css', function () {
         expect(spy).to.have.been.calledWith(sinon.match.object, sinon.match.object);
         expect(spy.getCall(0).args[0].important).to.be.true();
         expect(spy.getCall(0).args[1].important).to.be.false();
-      });
-
-    });
-
-    describe('validateCSS implementation', function () {
-
-      it('should output messages when an invalid CSS file is found', function () {
-        var spy = sinon.spy(handyman, 'log');
-
-        fs.createReadStream(path.join(process.cwd(), '/test/fixtures/invalid-css.css'))
-          .pipe(source('invalid-css.css'))
-          .pipe(buffer())
-          .pipe(validateCSSPipeline.validateCSS())
-          .on('end', function () {
-            expect(spy).to.have.been.calledTwice(); // 2 error messages
-          });
-
-        spy.reset();
-        handyman.log.restore();
-
-      });
-
-      it('should NOT output messages when a valid CSS file is found', function () {
-        var spy = sinon.spy(handyman, 'log');
-
-        fs.createReadStream(path.join(process.cwd(), '/test/fixtures/valid-css.css'))
-          .pipe(source('valid-css.css'))
-          .pipe(buffer())
-          .pipe(validateCSSPipeline.validateCSS())
-          .on('end', function () {
-            expect(spy).to.have.not.been.called(); // 0 error messages
-          });
-
-        handyman.log.restore();
       });
 
     });
